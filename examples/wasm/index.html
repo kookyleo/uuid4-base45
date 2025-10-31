@@ -49,10 +49,15 @@
     // Minimal QR renderer using qrcode-generator (inline ESM loader)
     // We will dynamically import a small QR lib from CDN to keep this example simple.
     async function loadQRLIB() {
-      if (window.qrcodegen) return window.qrcodegen;
-      const mod = await import('https://cdn.jsdelivr.net/npm/kazuhikoarase-qrcode-generator@1.4.4/js/qrcode.js');
-      // The lib attaches global qrcode; adapt to a simple interface
-      return window.qrcode || mod;
+      if (window.qrcode) return window.qrcode; // function qrcode(typeNumber, errorCorrectLevel)
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed to load qrcode-generator'));
+        document.head.appendChild(s);
+      });
+      return window.qrcode;
     }
 
     // Utility: estimate alphanumeric length -> QR alphanumeric capacity planning
