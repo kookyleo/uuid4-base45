@@ -76,6 +76,11 @@ wasm-bindgen --target web --no-typescript \
 
 - 使用静态服务器打开 `examples/wasm/index.html`（例如 `python3 -m http.server`）。
 
+## 下载产物
+
+- 来自 CI（最新构建）：进入 Actions 页面，选择最近一次成功的 CI 任务，下载名为 "wasm-demo" 的 artifact。链接：https://github.com/kookyleo/uuid4-base45/actions
+- 来自 Release：对于打了标签（v*）的版本，可在 Releases 页面下载附带的 wasm-demo.tar.gz。链接：https://github.com/kookyleo/uuid4-base45/releases
+
 ## 测试
 
 `cargo test` 覆盖：
