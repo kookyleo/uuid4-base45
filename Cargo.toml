@@ -28,6 +28,7 @@ rand = "0.8"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
+uuid = { version = "1", features = ["js"] }
 
 [[bin]]
 name = "uuid45"
