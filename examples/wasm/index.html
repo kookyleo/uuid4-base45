@@ -156,7 +156,7 @@
           // We’ll let it auto-choose mode; for numeric mode only payload must be numeric.
           const typeNumber = ver; // 1..40
           const errorCorrectLevel = QR_EC[ec];
-          const qr = new lib.QRCode(typeNumber, errorCorrectLevel);
+          const qr = lib(typeNumber, errorCorrectLevel);
           qr.addData(payload);
           qr.make();
           const svg = qr.createSvgTag(6, 0);
