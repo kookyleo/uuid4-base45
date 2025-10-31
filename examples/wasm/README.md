@@ -13,6 +13,9 @@ What it shows:
 - A static HTTP server (e.g. Python http.server)
 
 ## One-liner build & serve
+- 将 qrcode-generator 的 qrcode.js 放入本目录的 vendor/ 目录：
+  - https://unpkg.com/qrcode-generator@1.4.4/qrcode.js
+  - 或 https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js
 - Bash (Linux/macOS/Git Bash):
   - `./build_and_serve.sh`
 - PowerShell (Windows):

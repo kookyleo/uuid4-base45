@@ -11,13 +11,6 @@ rustup target add wasm32-unknown-unknown >/dev/null 2>&1 || true
 
 mkdir -p "$PKG_DIR"
 mkdir -p "$EX_DIR/vendor"
-# fetch vendor QR lib if missing
-if [ ! -f "$EX_DIR/vendor/qrcode.js" ]; then
-  echo "[2/4] Fetching QR vendor lib..."
-  curl -fsSL https://unpkg.com/qrcode-generator@1.4.4/qrcode.js -o "$EX_DIR/vendor/qrcode.js" || \
-  curl -fsSL https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js -o "$EX_DIR/vendor/qrcode.js"
-fi
-
 if command -v wasm-pack >/dev/null 2>&1; then
   echo "[2/4] Building with wasm-pack..."
   (cd "$ROOT_DIR" && wasm-pack build --target web --out-dir "$PKG_DIR" --out-name uuid45)
