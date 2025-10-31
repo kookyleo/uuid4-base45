@@ -32,11 +32,13 @@ jobs:
             --out-dir examples/wasm/pkg \
             --out-name uuid45 \
             target/wasm32-unknown-unknown/release/uuid45.wasm
-      - name: Upload WASM demo artifact
+      - name: Upload WASM demo artifact (minimal)
         uses: actions/upload-artifact@v4
         with:
           name: wasm-demo
-          path: examples/wasm
+          path: |
+            examples/wasm/index.html
+            examples/wasm/pkg
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
       - name: Format check

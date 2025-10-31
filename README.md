@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml/badge.svg)](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml)
 
+Live demo (GitHub Pages): https://kookyleo.github.io/uuid4-base45/
+
 Compact Base45 codec for UUID v4 by stripping the 6 fixed bits (version+variant), with CLI, Rust library, and WASM bindings.
 
 Features:

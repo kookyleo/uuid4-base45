@@ -43,10 +43,10 @@ jobs:
             --out-name uuid45 \
             target/wasm32-unknown-unknown/release/uuid45.wasm
 
-      - name: Archive wasm demo
+      - name: Archive wasm demo (minimal)
         run: |
           cd examples/wasm
-          tar -czf ../../wasm-demo.tar.gz .
+          tar -czf ../../wasm-demo.tar.gz index.html pkg
 
       - name: Release
         uses: softprops/action-gh-release@v2

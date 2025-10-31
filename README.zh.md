@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml/badge.svg)](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml)
 
+在线示例（GitHub Pages）：https://kookyleo.github.io/uuid4-base45/
+
 基于 UUID v4 的紧凑 Base45 编解码：移除 6 位固定位（版本与变体），提供 CLI、Rust 库以及 WASM 绑定。
 
 特性：
