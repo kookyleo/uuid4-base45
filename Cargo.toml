@@ -1,0 +1,32 @@
+[package]
+name = "uuid45"
+version = "0.1.0"
+edition = "2021"
+authors = ["Rovo Dev <dev@example.com>"]
+description = "UUID v4 <-> compact 122-bit with fixed bits removed, Base45 encoding; CLI + lib + WASM"
+license = "MIT"
+repository = ""
+
+[lib]
+name = "uuid45"
+crate-type = ["rlib", "cdylib"]
+
+[features]
+default = []
+
+[dependencies]
+uuid = { version = "1", features = ["v4", "serde", "fast-rng"] }
+thiserror = "1"
+hex = "0.4"
+qr-base45 = "0.1.1"
+
+# WASM
+wasm-bindgen = { version = "0.2" }
+
+[dev-dependencies]
+rand = "0.8"
+
+[[bin]]
+name = "uuid45"
+path = "src/bin/uuid45.rs"
+
