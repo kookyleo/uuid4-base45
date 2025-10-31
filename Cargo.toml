@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Rovo Dev <dev@example.com>"]
 description = "UUID v4 <-> compact 122-bit with fixed bits removed, Base45 encoding; CLI + lib + WASM"
-license = "MIT"
+license = "Apache-2.0"
 repository = ""
 
 [lib]
