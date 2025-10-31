@@ -27,6 +27,11 @@ jobs:
         run: cargo build --release --target wasm32-unknown-unknown
       - name: Install wasm-bindgen-cli
         run: cargo install wasm-bindgen-cli --version ^0.2
+      - name: Fetch QR vendor lib
+        run: |
+          mkdir -p examples/wasm/vendor
+          curl -fsSL https://unpkg.com/qrcode-generator@1.4.4/qrcode.js -o examples/wasm/vendor/qrcode.js || \
+          curl -fsSL https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js -o examples/wasm/vendor/qrcode.js
       - name: Generate wasm bindings
         run: |
           mkdir -p examples/wasm/pkg

@@ -50,24 +50,15 @@
     // We will dynamically import a small QR lib from CDN to keep this example simple.
     async function loadQRLIB() {
       if (window.qrcode) return window.qrcode; // function qrcode(typeNumber, errorCorrectLevel)
-      const urls = [
-        'https://unpkg.com/qrcode-generator@1.4.4/qrcode.js',
-        'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'
-      ];
-      let lastErr;
-      for (const url of urls) {
-        try {
-          await new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = url + '?v=' + Date.now();
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error('Failed to load: ' + url));
-            document.head.appendChild(s);
-          });
-          if (window.qrcode) return window.qrcode;
-        } catch (e) { lastErr = e; }
-      }
-      throw lastErr || new Error('Failed to load qrcode-generator');
+      // Prefer local vendor copy to avoid CDN dependency
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = './vendor/qrcode.js?v=' + Date.now();
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Failed to load local vendor qrcode.js'));
+        document.head.appendChild(s);
+      });
+      return window.qrcode;
     }
 
     // Utility: estimate alphanumeric length -> QR alphanumeric capacity planning
