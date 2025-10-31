@@ -76,10 +76,20 @@ wasm-bindgen --target web --no-typescript \
 
 - 使用静态服务器打开 `examples/wasm/index.html`（例如 `python3 -m http.server`）。
 
+## GitHub Pages 示例
+
+项目会自动发布一个在线示例到 GitHub Pages：
+- https://kookyleo.github.io/uuid4-base45/
+
 ## 下载产物
 
 - 来自 CI（最新构建）：进入 Actions 页面，选择最近一次成功的 CI 任务，下载名为 "wasm-demo" 的 artifact。链接：https://github.com/kookyleo/uuid4-base45/actions
 - 来自 Release：对于打了标签（v*）的版本，可在 Releases 页面下载附带的 wasm-demo.tar.gz。链接：https://github.com/kookyleo/uuid4-base45/releases
+
+### 本地使用 wasm-demo 产物
+- 解压 wasm-demo.tar.gz
+- 使用静态服务器提供该目录，例如：
+  - python3 -m http.server 8080（浏览器访问 http://localhost:8080）
 
 ## 测试
 

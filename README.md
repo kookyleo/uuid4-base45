@@ -76,10 +76,20 @@ wasm-bindgen --target web --no-typescript \
 
 - Open `examples/wasm/index.html` via a static server (e.g., `python3 -m http.server`) and navigate to it.
 
+## GitHub Pages
+
+A live demo is automatically published to GitHub Pages:
+- https://kookyleo.github.io/uuid4-base45/
+
 ## Download artifacts
 
 - From CI (latest run): Navigate to Actions, select the latest successful run of the CI workflow, and download the artifact named "wasm-demo". Link: https://github.com/kookyleo/uuid4-base45/actions
 - From Releases: For tagged releases (v*), download the attached wasm-demo.tar.gz from the Releases page. Link: https://github.com/kookyleo/uuid4-base45/releases
+
+### Using the wasm-demo artifact locally
+- Unpack wasm-demo.tar.gz
+- Serve the unzipped folder with a static server, e.g.:
+  - python3 -m http.server 8080 (then open http://localhost:8080)
 
 ## Tests
 
