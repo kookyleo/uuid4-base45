@@ -29,7 +29,7 @@
     <button id="btn-qr" style="margin-left:8px; display:none;">Generate a QR</button>
   </div>
   <div class="row" id="qr-config" style="display:none;">
-    <label>URL prefix: <input type="text" id="qr-prefix" placeholder="https://example.com/?data=" style="width:480px; max-width:100%"></label>
+    <label>URL prefix: <input type="text" id="qr-prefix" placeholder="https://example.com/data/" style="width:480px; max-width:100%"></label>
     <button id="btn-qr-confirm">Confirm</button>
   </div>
   <div class="row" id="qr-options" style="display:none;"></div>
@@ -56,10 +56,22 @@
     }
 
     // Utility: estimate Base45 numeric mode length -> QR numeric capacity planning
+    function isBase45Char(ch) {
+      const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
+      return alphabet.indexOf(ch) >= 0;
+    }
+
+    function normalizeBase45PrefixInput(s) {
+      // Uppercase and validate all chars are in Base45 alphabet
+      const t = s.toUpperCase();
+      for (const ch of t) {
+        if (!isBase45Char(ch)) return { ok: false, val: t };
+      }
+      return { ok: true, val: t };
+    }
+
     function estimateNumericLen(str) {
-      // Numeric mode only accepts [0-9]; but Base45 uses A-Z and symbols.
-      // As per your requirement, we will still compute based on string length treating it as numeric payload length.
-      // If strict numeric mode is required, user should provide a numeric-only prefix+data.
+      // Per requirement, treat total length as numeric-mode length estimation
       return str.length;
     }
 
@@ -124,8 +136,13 @@
     });
 
     document.getElementById('btn-qr-confirm').addEventListener('click', async () => {
-      const prefix = (document.getElementById('qr-prefix')).value || '';
-      const b45 = document.getElementById('b45').textContent.trim();
+      const prefixRaw = (document.getElementById('qr-prefix')).value || '';
+      const norm = normalizeBase45PrefixInput(prefixRaw);
+      if (!norm.ok) { alert('Prefix contains characters outside Base45 alphabet. It has been uppercased: ' + norm.val); return; }
+      const prefix = norm.val;
+      const b45 = document.getElementById('b45').textContent.trim().toUpperCase();
+      // Validate base45 payload characters
+      for (const ch of b45) { if (!isBase45Char(ch)) { alert('Base45 content contains invalid characters.'); return; } }
       const payload = prefix + b45;
       const numericLen = estimateNumericLen(payload);
       const ecLevels = ['L','M','Q','H'];
