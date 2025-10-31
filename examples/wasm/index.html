@@ -151,12 +151,11 @@
         const btn = document.createElement('button');
         btn.textContent = `v${ver} ${ec}`;
         btn.addEventListener('click', async () => {
-          const lib = await loadQRLIB();
-          // Using kazuhikoarase lib: qrcode(string, options)
-          // We’ll let it auto-choose mode; for numeric mode only payload must be numeric.
+          await loadQRLIB();
+          // Using classic qrcode-generator global API
           const typeNumber = ver; // 1..40
-          const errorCorrectLevel = QR_EC[ec];
-          const qr = lib(typeNumber, errorCorrectLevel);
+          const errorCorrectLevel = (window.QRErrorCorrectLevel && window.QRErrorCorrectLevel[ec]) ?? QR_EC[ec];
+          const qr = window.qrcode(typeNumber, errorCorrectLevel);
           qr.addData(payload);
           qr.make();
           const svg = qr.createSvgTag(6, 0);
