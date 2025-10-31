@@ -161,13 +161,8 @@
           await loadQRLIB();
           // Using classic qrcode-generator global API
           const typeNumber = ver; // 1..40
-          const ECL = (window.qrcode && window.qrcode.QRErrorCorrectLevel) || { L:1, M:0, Q:3, H:2 };
-          const errorCorrectLevel = ECL[ec];
-          if (typeof errorCorrectLevel === 'undefined') {
-            alert('Internal error: unknown EC level');
-            return;
-          }
-          const qr = window.qrcode(typeNumber, errorCorrectLevel);
+          // qrcode-generator expects EC level as string: 'L', 'M', 'Q', or 'H'
+          const qr = window.qrcode(typeNumber, ec);
           qr.addData(payload);
           qr.make();
           const svg = qr.createSvgTag(6, 0);
