@@ -85,7 +85,7 @@
       return pairs * 11 + single * 6;
     }
 
-    import { minimalVersionForAlnum, QR_EC } from './qr_capacity.js';
+    import { minimalVersionForAlnum, calculateAlnumBits } from './qr_capacity.js?v=2';
 
     async function main() {
       await init();
