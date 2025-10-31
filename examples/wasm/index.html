@@ -32,6 +32,7 @@
     <label>URL prefix: <input type="text" id="qr-prefix" placeholder="https://example.com/data/" style="width:480px; max-width:100%"></label>
     <button id="btn-qr-confirm">Confirm</button>
   </div>
+  <div class="row" id="qr-info" style="display:none;"></div>
   <div class="row" id="qr-options" style="display:none;"></div>
   <div class="row" id="qr-view"></div>
 
@@ -76,9 +77,12 @@
       return { ok: true, val: t };
     }
 
-    function estimateAlnumLen(str) {
-      // Alphanumeric mode encodes the characters from the defined set; we just use length
-      return str.length;
+    function alnumModeBits(str) {
+      // QR alphanumeric mode encodes 2 chars -> 11 bits, last single char -> 6 bits
+      const n = str.length;
+      const pairs = Math.floor(n / 2);
+      const single = n % 2;
+      return pairs * 11 + single * 6;
     }
 
     import { minimalVersionForAlnum, QR_EC } from './qr_capacity.js';
@@ -133,17 +137,20 @@
       // Validate base45 payload characters
       for (const ch of b45) { if (!isBase45Char(ch)) { alert('Base45 content contains invalid characters.'); return; } }
       const payload = prefix + b45;
-      const numericLen = estimateAlnumLen(payload);
+      const alnumBits = alnumModeBits(payload);
+      const info = document.getElementById('qr-info');
+      info.textContent = `Alphanumeric bits: ${alnumBits}`;
+      info.style.display = 'block';
       const ecLevels = ['L','M','Q','H'];
       const opts = [];
       for (const ec of ecLevels) {
-        const ver = minimalVersionForAlnum(numericLen, ec);
+        const ver = minimalVersionForAlnum(payload.length, ec);
         if (ver) opts.push({ ec, ver });
       }
       const container = document.getElementById('qr-options');
       container.innerHTML = '';
       if (opts.length === 0) {
-        container.textContent = 'Payload too large for versions up to 25 in numeric mode table.';
+        container.textContent = 'Payload too large for versions up to 40 in alphanumeric mode.';
         container.style.display = 'block';
         return;
       }
@@ -154,7 +161,7 @@
           await loadQRLIB();
           // Using classic qrcode-generator global API
           const typeNumber = ver; // 1..40
-          const ECL = window.QRErrorCorrectLevel || { L:1, M:0, Q:3, H:2 };
+          const ECL = (window.qrcode && window.qrcode.QRErrorCorrectLevel) || { L:1, M:0, Q:3, H:2 };
           const errorCorrectLevel = ECL[ec];
           if (typeof errorCorrectLevel === 'undefined') {
             alert('Internal error: unknown EC level');
