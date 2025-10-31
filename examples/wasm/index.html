@@ -26,7 +26,14 @@
   </div>
   <div class="row">
     <label>Base45: <code id="b45"></code></label>
+    <button id="btn-qr" style="margin-left:8px; display:none;">Generate a QR</button>
   </div>
+  <div class="row" id="qr-config" style="display:none;">
+    <label>URL prefix: <input type="text" id="qr-prefix" placeholder="https://example.com/?data=" style="width:480px; max-width:100%"></label>
+    <button id="btn-qr-confirm">Confirm</button>
+  </div>
+  <div class="row" id="qr-options" style="display:none;"></div>
+  <div class="row" id="qr-view"></div>
 
   <div class="row">
     <label>Base45 input: <input type="text" id="b45-in" placeholder="Base45 string"></label>
@@ -38,6 +45,42 @@
 
   <script type="module">
     import init, { wasm_gen_v4, wasm_encode_uuid_str, wasm_decode_to_uuid_str } from './pkg/uuid45.js';
+
+    // Minimal QR renderer using qrcode-generator (inline ESM loader)
+    // We will dynamically import a small QR lib from CDN to keep this example simple.
+    async function loadQRLIB() {
+      if (window.qrcodegen) return window.qrcodegen;
+      const mod = await import('https://cdn.jsdelivr.net/npm/kazuhikoarase-qrcode-generator@1.4.4/js/qrcode.js');
+      // The lib attaches global qrcode; adapt to a simple interface
+      return window.qrcode || mod;
+    }
+
+    // Utility: estimate Base45 numeric mode length -> QR numeric capacity planning
+    function estimateNumericLen(str) {
+      // Numeric mode only accepts [0-9]; but Base45 uses A-Z and symbols.
+      // As per your requirement, we will still compute based on string length treating it as numeric payload length.
+      // If strict numeric mode is required, user should provide a numeric-only prefix+data.
+      return str.length;
+    }
+
+    const QR_EC = { L: 1, M: 0, Q: 3, H: 2 }; // library uses: 0=M,1=L,2=H,3=Q
+
+    function minimalVersionFor(len, ecLevel) {
+      // QR capacities for numeric mode per version (approx, simplified):
+      // Using a subset table for versions 1..40 from QR spec numeric capacities.
+      // For brevity, a small table; in real app you’d use full matrix.
+      const cap = {
+        L: [41,77,127,187,255,322,370,461,552,652,772,883,1022,1101,1250,1408,1548,1725,1903,2061,2232,2409,2620,2812,3057],
+        M: [34,63,101,149,202,255,293,365,432,513,604,691,796,871,991,1082,1212,1346,1500,1600,1708,1872,2059,2188,2395],
+        Q: [27,48,77,111,144,178,207,259,312,364,427,489,580,621,703,775,876,948,1063,1159,1224,1358,1468,1588,1718],
+        H: [17,34,58,82,106,139,154,202,235,288,331,374,427,468,530,602,674,746,813,919,969,1056,1108,1228,1286]
+      };
+      const arr = cap[ecLevel];
+      for (let i = 0; i < arr.length; i++) {
+        if (len <= arr[i]) return i + 1; // version index starts at 1
+      }
+      return null; // exceeds version 25 in our short table
+    }
 
     async function main() {
       await init();
@@ -57,6 +100,8 @@
         try {
           const s = await wasm_encode_uuid_str(uuidIn.value.trim());
           b45Span.textContent = s;
+          // Show QR button now that we have Base45
+          document.getElementById('btn-qr').style.display = 'inline-block';
         } catch (e) {
           alert('Encode error: ' + e);
         }
@@ -71,6 +116,51 @@
         }
       });
     }
+
+    document.getElementById('btn-qr').addEventListener('click', () => {
+      document.getElementById('qr-config').style.display = 'block';
+      document.getElementById('qr-options').style.display = 'none';
+      document.getElementById('qr-view').innerHTML = '';
+    });
+
+    document.getElementById('btn-qr-confirm').addEventListener('click', async () => {
+      const prefix = (document.getElementById('qr-prefix')).value || '';
+      const b45 = document.getElementById('b45').textContent.trim();
+      const payload = prefix + b45;
+      const numericLen = estimateNumericLen(payload);
+      const ecLevels = ['L','M','Q','H'];
+      const opts = [];
+      for (const ec of ecLevels) {
+        const ver = minimalVersionFor(numericLen, ec);
+        if (ver) opts.push({ ec, ver });
+      }
+      const container = document.getElementById('qr-options');
+      container.innerHTML = '';
+      if (opts.length === 0) {
+        container.textContent = 'Payload too large for versions up to 25 in numeric mode table.';
+        container.style.display = 'block';
+        return;
+      }
+      for (const {ec, ver} of opts) {
+        const btn = document.createElement('button');
+        btn.textContent = `v${ver} ${ec}`;
+        btn.addEventListener('click', async () => {
+          const lib = await loadQRLIB();
+          // Using kazuhikoarase lib: qrcode(string, options)
+          // We’ll let it auto-choose mode; for numeric mode only payload must be numeric.
+          const typeNumber = ver; // 1..40
+          const errorCorrectLevel = QR_EC[ec];
+          const qr = new lib.QRCode(typeNumber, errorCorrectLevel);
+          qr.addData(payload);
+          qr.make();
+          const svg = qr.createSvgTag(6, 0);
+          const view = document.getElementById('qr-view');
+          view.innerHTML = svg;
+        });
+        container.appendChild(btn);
+      }
+      container.style.display = 'block';
+    });
 
     main();
   </script>
