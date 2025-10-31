@@ -12,7 +12,7 @@ Features:
 ## Install
 
 - Build CLI: `cargo install --path .`
-- Use as a lib: add `uuid45 = { git = "<your repo>" }` or local path.
+- Use as a lib: add `uuid45 = { git = "https://github.com/kookyleo/uuid4-base45.git" }` or use a local path dependency.
 
 ## CLI usage
 

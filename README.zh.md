@@ -12,7 +12,7 @@
 ## 安装
 
 - 构建 CLI：`cargo install --path .`
-- 以库形式使用：在你的项目中添加依赖 `uuid45 = { git = "<your repo>" }` 或本地路径依赖。
+- 以库形式使用：在你的项目中添加依赖 `uuid45 = { git = "https://github.com/kookyleo/uuid4-base45.git" }`，或使用本地路径依赖。
 
 ## 命令行用法
 
