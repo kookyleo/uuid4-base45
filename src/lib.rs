@@ -326,4 +326,32 @@ mod tests {
         let d2 = decode_to_uuid(&s2).unwrap();
         assert_eq!(u_max, d2);
     }
+
+    #[test]
+    fn encode_uuid_str_invalid() {
+        let err = encode_uuid_str("not-a-uuid").unwrap_err();
+        // Ensure it's the InvalidUuid variant message path
+        assert!(matches!(err, Uuid45Error::InvalidUuid(_)));
+    }
+
+    #[test]
+    fn decode_invalid_length_bytes() {
+        // Make a Base45 string that decodes to 15 bytes (invalid length)
+        let fifteen = vec![0u8; 15];
+        let b45 = qr_base45::encode(&fifteen);
+        let err = decode_to_uuid(&b45).unwrap_err();
+        assert!(matches!(err, Uuid45Error::InvalidLength { .. }));
+    }
+
+    #[test]
+    fn decode_non_zero_padding_via_base45() {
+        let u = generate_v4();
+        let s = encode_uuid(u);
+        let mut compact = qr_base45::decode(&s).unwrap();
+        // set a high padding bit in last byte
+        compact[15] |= 0b0100_0000;
+        let tampered_b45 = qr_base45::encode(&compact);
+        let err = decode_to_uuid(&tampered_b45).unwrap_err();
+        assert!(matches!(err, Uuid45Error::NonZeroPadding));
+    }
 }
