@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Build (check)
+        run: |
+          cargo build --all-targets --verbose
+          cargo test --verbose
+          cargo clippy --all-targets -- -D warnings
+          cargo fmt --all -- --check
+
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Cargo build wasm target
+        run: cargo build --release --target wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --version ^0.2
+
+      - name: Generate wasm bindings
+        run: |
+          mkdir -p examples/wasm/pkg
+          wasm-bindgen --target web --no-typescript \
+            --out-dir examples/wasm/pkg \
+            --out-name uuid45 \
+            target/wasm32-unknown-unknown/release/uuid45.wasm
+
+      - name: Archive wasm demo
+        run: |
+          cd examples/wasm
+          tar -czf ../../wasm-demo.tar.gz .
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            wasm-demo.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
