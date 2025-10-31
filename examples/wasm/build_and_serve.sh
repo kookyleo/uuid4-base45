@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
 EX_DIR="$ROOT_DIR/examples/wasm"
 PKG_DIR="$EX_DIR/pkg"
-PORT=${PORT:-8080}
+PORT=${PORT:-10080}
 
 echo "[1/4] Ensuring wasm32 target..."
 rustup target add wasm32-unknown-unknown >/dev/null 2>&1 || true
