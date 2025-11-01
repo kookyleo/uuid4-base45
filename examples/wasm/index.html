@@ -3,55 +3,125 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>uuid45 WASM Demo</title>
+  <title>WASM Demo</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 1rem; }
-    input[type=text] { width: 480px; max-width: 100%; }
-    code { background: #f4f4f4; padding: 2px 4px; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      padding: 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    input[type=text] {
+      width: 480px;
+      max-width: 100%;
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
     .row { margin: 0.5rem 0; }
+    .section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .section h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: #333;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 0.5rem;
+    }
+    button {
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: white;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    button:hover {
+      background: #f0f0f0;
+    }
+    button:active {
+      background: #e0e0e0;
+    }
   </style>
 </head>
 <body>
-  <h1>uuid45 WASM Demo</h1>
+  <h1>WASM Demo</h1>
   <p>Generate UUID v4, encode to Base45 compact string, and decode back.</p>
 
-  <div class="row">
-    <button id="btn-gen">Generate v4</button>
-    <span id="uuid"></span>
+  <!-- Encode Section -->
+  <div class="section">
+    <h2>Encode</h2>
+    <div class="row">
+      <button id="btn-gen">Generate v4</button>
+      <span id="uuid"></span>
+      <button id="btn-copy-uuid" style="display:none;">Copy</button>
+    </div>
+    <div class="row">
+      <label>UUID input: <input type="text" id="uuid-in" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label>
+      <button id="btn-enc">Encode</button>
+    </div>
+    <div class="row">
+      <label>Base45: <code id="b45"></code></label>
+      <button id="btn-copy-b45" style="display:none;">Copy</button>
+      <button id="btn-qr" style="display:none;">Generate QR</button>
+    </div>
   </div>
 
-  <div class="row">
-    <label>UUID input: <input type="text" id="uuid-in" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label>
-    <button id="btn-enc">Encode</button>
+  <!-- QR Code Section -->
+  <div class="section" id="qr-section" style="display:none;">
+    <h2>QR Code</h2>
+    <div class="row">
+      <label>URL prefix: <input type="text" id="qr-prefix" value="https://lets.go/" style="width:480px; max-width:100%"></label>
+      <button id="btn-qr-confirm">Confirm</button>
+    </div>
+    <div class="row" id="qr-info" style="display:none;"></div>
+    <div class="row" id="qr-options" style="display:none;"></div>
+    <div class="row" id="qr-view"></div>
   </div>
-  <div class="row">
-    <label>Base45: <code id="b45"></code></label>
-    <button id="btn-qr" style="margin-left:8px; display:none;">Generate a QR</button>
-  </div>
-  <div class="row" id="qr-config" style="display:none;">
-    <label>URL prefix: <input type="text" id="qr-prefix" placeholder="https://example.com/data/" style="width:480px; max-width:100%"></label>
-    <button id="btn-qr-confirm">Confirm</button>
-  </div>
-  <div class="row" id="qr-info" style="display:none;"></div>
-  <div class="row" id="qr-options" style="display:none;"></div>
-  <div class="row" id="qr-view"></div>
 
-  <div class="row">
-    <label>Base45 input: <input type="text" id="b45-in" placeholder="Base45 string"></label>
-    <button id="btn-dec">Decode</button>
-  </div>
-  <div class="row">
-    <label>Decoded UUID: <code id="uuid-out"></code></label>
+  <!-- Decode Section -->
+  <div class="section">
+    <h2>Decode</h2>
+    <div class="row">
+      <label>Base45 input: <input type="text" id="b45-in" placeholder="Base45 string"></label>
+      <button id="btn-dec">Decode</button>
+    </div>
+    <div class="row">
+      <label>Decoded UUID: <code id="uuid-out"></code></label>
+      <button id="btn-copy-decoded" style="display:none;">Copy</button>
+    </div>
   </div>
 
   <script type="module">
     import init, { wasm_gen_v4, wasm_encode_uuid_str, wasm_decode_to_uuid_str } from './pkg/uuid45.js';
 
+    // Copy to clipboard helper
+    function copyToClipboard(text, button) {
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1500);
+      }).catch(err => {
+        alert('Failed to copy: ' + err);
+      });
+    }
+
     // Minimal QR renderer using qrcode-generator (inline ESM loader)
-    // We will dynamically import a small QR lib from CDN to keep this example simple.
     async function loadQRLIB() {
-      if (window.qrcode) return window.qrcode; // function qrcode(typeNumber, errorCorrectLevel)
-      // Prefer local vendor copy to avoid CDN dependency
+      if (window.qrcode) return window.qrcode;
       await new Promise((resolve, reject) => {
         const s = document.createElement('script');
         s.src = './vendor/qrcode.js?v=' + Date.now();
@@ -94,42 +164,60 @@
       const uuidOut = document.getElementById('uuid-out');
       const uuidIn = document.getElementById('uuid-in');
       const b45In = document.getElementById('b45-in');
+      const btnCopyUuid = document.getElementById('btn-copy-uuid');
+      const btnCopyB45 = document.getElementById('btn-copy-b45');
+      const btnCopyDecoded = document.getElementById('btn-copy-decoded');
 
       document.getElementById('btn-gen').addEventListener('click', () => {
         const u = wasm_gen_v4();
         uuidSpan.textContent = u;
-        (uuidIn).value = u;
+        uuidIn.value = u;
+        btnCopyUuid.style.display = 'inline-block';
+      });
+
+      btnCopyUuid.addEventListener('click', () => {
+        copyToClipboard(uuidSpan.textContent, btnCopyUuid);
       });
 
       document.getElementById('btn-enc').addEventListener('click', async () => {
         try {
           const s = await wasm_encode_uuid_str(uuidIn.value.trim());
           b45Span.textContent = s;
-          // Show QR button now that we have Base45
+          b45In.value = s;  // Auto-fill decode input
+          btnCopyB45.style.display = 'inline-block';
           document.getElementById('btn-qr').style.display = 'inline-block';
         } catch (e) {
           alert('Encode error: ' + e);
         }
       });
 
+      btnCopyB45.addEventListener('click', () => {
+        copyToClipboard(b45Span.textContent, btnCopyB45);
+      });
+
       document.getElementById('btn-dec').addEventListener('click', async () => {
         try {
           const s = await wasm_decode_to_uuid_str(b45In.value.trim());
           uuidOut.textContent = s;
+          btnCopyDecoded.style.display = 'inline-block';
         } catch (e) {
           alert('Decode error: ' + e);
         }
       });
+
+      btnCopyDecoded.addEventListener('click', () => {
+        copyToClipboard(uuidOut.textContent, btnCopyDecoded);
+      });
     }
 
     document.getElementById('btn-qr').addEventListener('click', () => {
-      document.getElementById('qr-config').style.display = 'block';
+      document.getElementById('qr-section').style.display = 'block';
       document.getElementById('qr-options').style.display = 'none';
       document.getElementById('qr-view').innerHTML = '';
     });
 
     document.getElementById('btn-qr-confirm').addEventListener('click', async () => {
-      const prefixRaw = (document.getElementById('qr-prefix')).value || '';
+      const prefixRaw = document.getElementById('qr-prefix').value || '';
       const norm = normalizeBase45PrefixInput(prefixRaw);
       if (!norm.ok) { alert('Prefix contains characters outside Base45 alphabet. It has been uppercased: ' + norm.val); return; }
       const prefix = norm.val;
