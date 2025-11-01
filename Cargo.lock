@@ -86,12 +86,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "qr-base45"
-version = "0.1.1"
+name = "qr-base44"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7161f19aea9c433448e4cb93fe79f418af806efaf29cec6f52d3a9747fd46d35"
+checksum = "a16da2c72d0e0b2474a080ff53f21d760bcff75e52fedfac607a69e881af099d"
 dependencies = [
  "thiserror",
+]
+
+[[package]]
+name = "qr-url-uuid4"
+version = "0.2.0"
+dependencies = [
+ "getrandom 0.2.16",
+ "hex",
+ "js-sys",
+ "qr-base44",
+ "rand 0.8.5",
+ "thiserror",
+ "uuid",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -250,20 +264,6 @@ dependencies = [
  "js-sys",
  "rand 0.9.2",
  "serde",
- "wasm-bindgen",
-]
-
-[[package]]
-name = "uuid45"
-version = "0.2.0"
-dependencies = [
- "getrandom 0.2.16",
- "hex",
- "js-sys",
- "qr-base45",
- "rand 0.8.5",
- "thiserror",
- "uuid",
  "wasm-bindgen",
 ]
 

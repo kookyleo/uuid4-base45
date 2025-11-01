@@ -1,7 +1,8 @@
-//! uuid45: Compact Base45 codec for UUID v4 by stripping the 6 fixed bits (version+variant).
-//! - 128-bit UUID v4 -> remove version(4b) and variant(2b) => 122 bits, pack to 16 bytes (last 6 bits unused) => Base45
+//! qr-url-uuid4: Compact Base44 codec for UUID v4 by stripping the 6 fixed bits (version+variant).
+//! - 128-bit UUID v4 -> remove version(4b) and variant(2b) => 122 bits, pack to 16 bytes (last 6 bits unused) => Base44
 //! - Reverse to reconstruct a canonical UUID v4
-//!   Provides: library API, WASM bindings (target wasm32), and used by CLI.
+//! - Optimized for QR code alphanumeric mode and URL embedding (Base44 = Base45 without space character)
+//!   Provides: library API, WASM bindings (target wasm32), and CLI tool.
 
 use thiserror::Error;
 use uuid::Uuid;
@@ -10,8 +11,8 @@ use uuid::Uuid;
 pub enum Uuid45Error {
     #[error("Invalid UUID: {0}")]
     InvalidUuid(String),
-    #[error("Invalid Base45: {0}")]
-    InvalidBase45(String),
+    #[error("Invalid Base44: {0}")]
+    InvalidBase44(String),
     #[error("Invalid length: expected {expected} got {actual}")]
     InvalidLength { expected: usize, actual: usize },
     #[error("Non-zero padding bits in compact payload")]
@@ -138,34 +139,34 @@ pub fn compact_bytes_to_uuid(compact: &[u8]) -> Result<[u8; 16], Uuid45Error> {
     Ok(out)
 }
 
-/// Encode a UUID into Base45 compact string.
+/// Encode a UUID into Base44 compact string.
 pub fn encode_uuid(uuid: Uuid) -> String {
     let bytes = uuid.into_bytes();
     let compact = uuid_to_compact_bytes(&bytes)
         .expect("uuid_to_compact_bytes should not fail for valid UUID");
-    qr_base45::encode(&compact)
+    qr_base44::encode(&compact)
 }
 
-/// Try to encode a UUID string into Base45 compact string.
+/// Try to encode a UUID string into Base44 compact string.
 pub fn encode_uuid_str(s: &str) -> Result<String, Uuid45Error> {
     let uuid = Uuid::parse_str(s).map_err(|e| Uuid45Error::InvalidUuid(e.to_string()))?;
     Ok(encode_uuid(uuid))
 }
 
-/// Encode raw 16-byte UUID into Base45 compact string.
+/// Encode raw 16-byte UUID into Base44 compact string.
 pub fn encode_uuid_bytes(bytes: &[u8; 16]) -> String {
     let compact = uuid_to_compact_bytes(bytes).expect("valid path");
-    qr_base45::encode(&compact)
+    qr_base44::encode(&compact)
 }
 
-/// Decode Base45 compact string into a UUID.
+/// Decode Base44 compact string into a UUID.
 pub fn decode_to_uuid(s: &str) -> Result<Uuid, Uuid45Error> {
-    let bytes = qr_base45::decode(s).map_err(|e| Uuid45Error::InvalidBase45(e.to_string()))?;
+    let bytes = qr_base44::decode(s).map_err(|e| Uuid45Error::InvalidBase44(e.to_string()))?;
     let arr = compact_bytes_to_uuid(&bytes)?;
     Ok(Uuid::from_bytes(arr))
 }
 
-/// Decode Base45 compact string back to canonical 16-byte UUID bytes.
+/// Decode Base44 compact string back to canonical 16-byte UUID bytes.
 pub fn decode_to_bytes(s: &str) -> Result<[u8; 16], Uuid45Error> {
     let u = decode_to_uuid(s)?;
     Ok(u.into_bytes())
@@ -241,33 +242,33 @@ mod tests {
         let u = Uuid::parse_str("ffffffff-ffff-4fff-bfff-ffffffffffff").unwrap();
         // Encode and decode
         let enc = encode_uuid(u);
-        let raw = qr_base45::decode(&enc).unwrap();
+        let raw = qr_base44::decode(&enc).unwrap();
         assert_eq!(raw.len(), 16);
         assert_eq!(raw[15] & 0b1111_1100, 0);
     }
 
     #[test]
-    fn invalid_base45_char() {
-        assert!(qr_base45::decode("A😀").is_err());
-        assert!(qr_base45::decode("a").is_err()); // lowercase not allowed
+    fn invalid_base44_char() {
+        assert!(qr_base44::decode("A😀").is_err());
+        assert!(qr_base44::decode("a").is_err()); // lowercase not allowed
     }
 
     #[test]
-    fn invalid_base45_dangling() {
-        assert!(qr_base45::decode("A").is_err()); // dangling single char
+    fn invalid_base44_dangling() {
+        assert!(qr_base44::decode("A").is_err()); // dangling single char
     }
 
     #[test]
-    fn invalid_base45_overflow() {
+    fn invalid_base44_overflow() {
         // ':::' => a=b=c=44 -> x=91124 > 65535 -> overflow
-        assert!(qr_base45::decode(":::").is_err());
+        assert!(qr_base44::decode(":::").is_err());
     }
 
     #[test]
     fn non_zero_padding_rejected() {
         let u = generate_v4();
         let s = encode_uuid(u);
-        let mut compact = qr_base45::decode(&s).unwrap();
+        let mut compact = qr_base44::decode(&s).unwrap();
         assert_eq!(compact.len(), 16);
         // Flip a high padding bit in last byte
         compact[15] |= 0b0001_0000;
@@ -282,7 +283,7 @@ mod tests {
     fn invalid_length_rejected() {
         let u = generate_v4();
         let s = encode_uuid(u);
-        let compact = qr_base45::decode(&s).unwrap();
+        let compact = qr_base44::decode(&s).unwrap();
         let err = compact_bytes_to_uuid(&compact[..15]).unwrap_err();
         match err {
             Uuid45Error::InvalidLength { .. } => {}
@@ -336,21 +337,21 @@ mod tests {
 
     #[test]
     fn decode_invalid_length_bytes() {
-        // Make a Base45 string that decodes to 15 bytes (invalid length)
+        // Make a Base44 string that decodes to 15 bytes (invalid length)
         let fifteen = vec![0u8; 15];
-        let b45 = qr_base45::encode(&fifteen);
+        let b45 = qr_base44::encode(&fifteen);
         let err = decode_to_uuid(&b45).unwrap_err();
         assert!(matches!(err, Uuid45Error::InvalidLength { .. }));
     }
 
     #[test]
-    fn decode_non_zero_padding_via_base45() {
+    fn decode_non_zero_padding_via_base44() {
         let u = generate_v4();
         let s = encode_uuid(u);
-        let mut compact = qr_base45::decode(&s).unwrap();
+        let mut compact = qr_base44::decode(&s).unwrap();
         // set a high padding bit in last byte
         compact[15] |= 0b0100_0000;
-        let tampered_b45 = qr_base45::encode(&compact);
+        let tampered_b45 = qr_base44::encode(&compact);
         let err = decode_to_uuid(&tampered_b45).unwrap_err();
         assert!(matches!(err, Uuid45Error::NonZeroPadding));
     }

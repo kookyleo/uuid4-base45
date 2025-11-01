@@ -1,33 +1,61 @@
-# uuid45
+# qr-url-uuid4
 
-[![CI](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml/badge.svg)](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml)
+[![CI](https://github.com/kookyleo/qr-url-uuid4/actions/workflows/ci.yml/badge.svg)](https://github.com/kookyleo/qr-url-uuid4/actions/workflows/ci.yml)
 
-Live demo (GitHub Pages): https://kookyleo.github.io/uuid4-base45/
+Live demo (GitHub Pages): https://kookyleo.github.io/qr-url-uuid4/
 
-Compact Base45 codec for UUID v4 by stripping the 6 fixed bits (version+variant), with CLI, Rust library, and WASM bindings.
+Encode UUID v4 into compact QR-friendly URLs using Base44. Removes the 6 fixed bits (version + variant) for optimal QR code alphanumeric mode encoding.
 
-Features:
-- Convert UUID v4 (128-bit) to compact Base45 string by removing the 6 fixed bits (version=4 nibble and RFC4122 variant 2 MSBs), leaving 122 bits. These are packed into 16 bytes (with 6 zero padding bits) and encoded using Base45.
-- Decode the Base45 string back to the exact original UUID v4 bytes / string.
-- Library API, CLI binary, and WASM bindings for JS. Includes a simple HTML demo.
+## Overview
+
+This library implements a compact encoding scheme for UUID v4 identifiers:
+
+- **Input**: Standard UUID v4 (128 bits)
+- **Optimization**: Remove 6 deterministic bits (4-bit version + 2-bit variant) → 122 bits of entropy
+- **Encoding**: Base44 (QR alphanumeric alphabet excluding space)
+- **Output**: Compact URL-safe string (typically 24-25 characters)
+
+### Why Base44 instead of Base45?
+
+[Base45](https://datatracker.ietf.org/doc/html/rfc9285) (RFC 9285) uses the full QR code alphanumeric character set: `0-9A-Z $%*+-./:` (45 characters). However, the **space character** creates problems for URL embedding:
+
+- ❌ **URL encoding required**: Spaces must be encoded as `%20` or `+`, increasing length
+- ❌ **Proxy issues**: Some HTTP proxies and servers strip trailing/leading spaces
+- ❌ **Copy-paste problems**: Spaces may be lost when users copy URLs from browsers or logs
+- ❌ **Inconsistent handling**: Different systems treat spaces differently (percent-encode vs plus-encode)
+
+**Base44** removes the space character from the alphabet (`0-9A-Z $%*+-./:` → `0-9A-Z $%*+-./:` without space), providing:
+
+- ✅ **True URL-safe**: No percent-encoding needed for any character
+- ✅ **QR-optimal**: Still uses QR alphanumeric mode (5.5 bits/char avg)
+- ✅ **Reliable**: No ambiguity in URL handling across different systems
+- ✅ **Compact**: Only marginally longer than Base45 due to slightly smaller alphabet
+
+### Features
+
+- ✅ Convert UUID v4 (128-bit) to compact Base44 by removing 6 fixed bits, leaving 122 bits of entropy
+- ✅ Perfect for QR code generation (alphanumeric mode optimization)
+- ✅ URL embedding without any percent-encoding required
+- ✅ Lossless bidirectional conversion (decode restores exact original UUID)
+- ✅ Rust library, CLI tool, and WASM bindings for web applications
 
 ## Install
 
 - Build CLI: `cargo install --path .`
-- Use as a lib: add `uuid45 = { git = "https://github.com/kookyleo/uuid4-base45.git" }` or use a local path dependency.
+- Use as a lib: add `qr-url-uuid4 = { git = "https://github.com/kookyleo/qr-url-uuid4.git" }` or use a local path dependency.
 
 ## CLI usage
 
 ```
-uuid45
+qr-url-uuid4
 
 Commands:
-  gen                       Generate a random UUID v4 and print Base45 and UUID
-  encode <UUID|HEX|@->     Encode a UUID into Base45. Accepts:
+  gen                       Generate a random UUID v4 and print Base44 and UUID
+  encode <UUID|HEX|@->     Encode a UUID into Base44. Accepts:
                            - canonical UUID string (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
                            - 32-hex (no dashes)
                            - raw 16-byte via stdin with @-
-  decode <BASE45|@->       Decode Base45 string back to UUID string and bytes (hex)
+  decode <BASE44|@->       Decode Base44 string back to UUID string and bytes (hex)
 
 Options:
   -q, --quiet              Only print the primary output
@@ -35,9 +63,9 @@ Options:
 ```
 
 Examples:
-- `uuid45 gen`
-- `uuid45 encode 550e8400-e29b-41d4-a716-446655440000`
-- `uuid45 decode <base45>`
+- `qr-url-uuid4 gen`
+- `qr-url-uuid4 encode 550e8400-e29b-41d4-a716-446655440000`
+- `qr-url-uuid4 decode <base44-string>`
 
 ## Library API
 
@@ -68,12 +96,12 @@ rustup target add wasm32-unknown-unknown
 cargo build --release --target wasm32-unknown-unknown
 wasm-bindgen --target web --no-typescript \
   --out-dir examples/wasm/pkg \
-  --out-name uuid45 \
-  target/wasm32-unknown-unknown/release/uuid45.wasm
+  --out-name qr_url_uuid4 \
+  target/wasm32-unknown-unknown/release/qr_url_uuid4.wasm
 
 # Or using wasm-pack
 # cargo install wasm-pack
-# wasm-pack build --target web --out-dir examples/wasm/pkg --out-name uuid45
+# wasm-pack build --target web --out-dir examples/wasm/pkg --out-name qr_url_uuid4
 ```
 
 - Open `examples/wasm/index.html` via a static server (e.g., `python3 -m http.server`) and navigate to it.
@@ -81,12 +109,12 @@ wasm-bindgen --target web --no-typescript \
 ## GitHub Pages
 
 A live demo is automatically published to GitHub Pages:
-- https://kookyleo.github.io/uuid4-base45/
+- https://kookyleo.github.io/qr-url-uuid4/
 
 ## Download artifacts
 
-- From CI (latest run): Navigate to Actions, select the latest successful run of the CI workflow, and download the artifact named "wasm-demo". Link: https://github.com/kookyleo/uuid4-base45/actions
-- From Releases: For tagged releases (v*), download the attached wasm-demo.tar.gz from the Releases page. Link: https://github.com/kookyleo/uuid4-base45/releases
+- From CI (latest run): Navigate to Actions, select the latest successful run of the CI workflow, and download the artifact named "wasm-demo". Link: https://github.com/kookyleo/qr-url-uuid4/actions
+- From Releases: For tagged releases (v*), download the attached wasm-demo.tar.gz from the Releases page. Link: https://github.com/kookyleo/qr-url-uuid4/releases
 
 ### Using the wasm-demo artifact locally
 - Unpack wasm-demo.tar.gz

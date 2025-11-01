@@ -1,11 +1,12 @@
-# WASM Demo for uuid45
+# WASM Demo for qr-url-uuid4
 
-This example demonstrates using the uuid45 WASM bindings in a simple HTML page.
+This example demonstrates using the qr-url-uuid4 WASM bindings in a simple HTML page.
 
 What it shows:
 - Generate UUID v4 in the browser (via wasm)
-- Encode UUID to compact Base45 string
-- Decode Base45 back to UUID string
+- Encode UUID to compact Base44 string
+- Decode Base44 back to UUID string
+- Generate QR codes optimized for alphanumeric mode
 
 ## Prerequisites
 - Rust toolchain (stable)
@@ -35,14 +36,14 @@ rustup target add wasm32-unknown-unknown
 cargo build --release --target wasm32-unknown-unknown
 wasm-bindgen --target web --no-typescript \
   --out-dir examples/wasm/pkg \
-  --out-name uuid45 \
-  target/wasm32-unknown-unknown/release/uuid45.wasm
+  --out-name qr_url_uuid4 \
+  target/wasm32-unknown-unknown/release/qr_url_uuid4.wasm
 ```
 
 Option B: wasm-pack
 ```
 # cargo install wasm-pack
-wasm-pack build --target web --out-dir examples/wasm/pkg --out-name uuid45
+wasm-pack build --target web --out-dir examples/wasm/pkg --out-name qr_url_uuid4
 ```
 
 Then serve the folder:

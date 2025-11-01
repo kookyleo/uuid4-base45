@@ -1,33 +1,55 @@
-# uuid45
+# qr-url-uuid4
 
-[![CI](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml/badge.svg)](https://github.com/kookyleo/uuid4-base45/actions/workflows/ci.yml)
+[![CI](https://github.com/kookyleo/qr-url-uuid4/actions/workflows/ci.yml/badge.svg)](https://github.com/kookyleo/qr-url-uuid4/actions/workflows/ci.yml)
 
-在线示例（GitHub Pages）：https://kookyleo.github.io/uuid4-base45/
+在线示例（GitHub Pages）：https://kookyleo.github.io/qr-url-uuid4/
 
-基于 UUID v4 的紧凑 Base45 编解码：移除 6 位固定位（版本与变体），提供 CLI、Rust 库以及 WASM 绑定。
+使用 Base44 将 UUID v4 编码为紧凑的 QR 友好 URL。移除 6 个固定位（版本 + 变体）以优化 QR 码字母数字模式编码。
 
-特性：
-- 将 UUID v4（128 位）去除版本（4 位，0100）与变体（2 位，10）的固定位后，得到 122 位有效内容。将其打包成 16 字节（最后一个字节仅低 2 位有效，高 6 位为 0 填充），再使用 Base45 编码为字符串。
-- 可将上述 Base45 字符串完整还原回原始 UUID v4（字节或字符串）。
-- 同时提供库 API、命令行工具、WASM 绑定和一个 HTML 示例。
+## 概述
+
+本库实现了 UUID v4 标识符的紧凑编码方案：
+
+- **输入**: 标准 UUID v4（128 位）
+- **优化**: 移除 6 个确定性位（4 位版本 + 2 位变体）→ 122 位熵
+- **编码**: Base44（QR 字母数字字符集，不含空格）
+- **输出**: 紧凑的 URL 安全字符串（通常 24-25 字符）
+
+### 为什么选择 Base44 而不是 Base45？
+
+Base45（[RFC 9285](https://datatracker.ietf.org/doc/html/rfc9285)）使用完整的 QR 码字母数字字符集：`0-9A-Z $%*+-./:`（45 个字符）。但是，**空格字符**在 URL 嵌入时会造成问题：
+
+- ❌ **需要 URL 编码**: 空格必须编码为 `%20` 或 `+`，增加长度
+- ❌ **代理问题**: 某些 HTTP 代理和服务器会删除首尾空格
+- ❌ **复制粘贴问题**: 用户从浏览器或日志复制 URL 时可能丢失空格
+- ❌ **处理不一致**: 不同系统对空格处理不同（百分号编码 vs 加号编码）
+
+**Base44** 从字母表中移除了空格字符，提供：
+
+- ✅ **真正的 URL 安全**: 任何字符都不需要百分号编码
+- ✅ **QR 最优**: 仍使用 QR 字母数字模式（平均 5.5 位/字符）
+- ✅ **可靠**: URL 处理在不同系统间无歧义
+- ✅ **紧凑**: 由于字母表略小，仅比 Base45 稍长
+
+详细的英文文档请参阅 [README.md](README.md)
 
 ## 安装
 
 - 构建 CLI：`cargo install --path .`
-- 以库形式使用：在你的项目中添加依赖 `uuid45 = { git = "https://github.com/kookyleo/uuid4-base45.git" }`，或使用本地路径依赖。
+- 以库形式使用：在你的项目中添加依赖 `qr-url-uuid4 = { git = "https://github.com/kookyleo/qr-url-uuid4.git" }`，或使用本地路径依赖。
 
 ## 命令行用法
 
 ```
-uuid45
+qr-url-uuid4
 
 命令：
-  gen                       生成随机 UUID v4，并打印 Base45 与 UUID
-  encode <UUID|HEX|@->     将 UUID 编码为 Base45。支持：
+  gen                       生成随机 UUID v4，并打印 Base44 与 UUID
+  encode <UUID|HEX|@->     将 UUID 编码为 Base44。支持：
                            - 标准 UUID 字符串（xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx）
                            - 32 位十六进制（无连字符）
                            - 通过 @- 从 stdin 读入 16 字节原始数据
-  decode <BASE45|@->       将 Base45 字符串解码回 UUID 字符串与字节（hex）
+  decode <BASE44|@->       将 Base44 字符串解码回 UUID 字符串与字节（hex）
 
 选项：
   -q, --quiet              仅输出主要结果
@@ -35,74 +57,18 @@ uuid45
 ```
 
 示例：
-- `uuid45 gen`
-- `uuid45 encode 550e8400-e29b-41d4-a716-446655440000`
-- `uuid45 decode <base45>`
-
-## 库 API
-
-- `generate_v4() -> Uuid`
-- `encode_uuid(uuid: Uuid) -> String`
-- `encode_uuid_str(s: &str) -> Result<String, Uuid45Error>`
-- `encode_uuid_bytes(bytes: &[u8; 16]) -> String`
-- `decode_to_uuid(s: &str) -> Result<Uuid, Uuid45Error>`
-- `decode_to_bytes(s: &str) -> Result<[u8; 16], Uuid45Error>`
-- `decode_to_string(s: &str) -> Result<String, Uuid45Error>`
-
-## WASM 使用
-
-当为 `wasm32-unknown-unknown` 目标并配合 `wasm-bindgen` 编译时，提供以下绑定：
-- `wasm_gen_v4() -> String`
-- `wasm_encode_uuid_str(s: &str) -> Result<String, JsValue>`
-- `wasm_decode_to_uuid_str(s: &str) -> Result<String, JsValue>`
-- `wasm_decode_to_bytes(s: &str) -> Result<Uint8Array, JsValue>`
-
-示例页面位于 `examples/wasm/index.html`。
-
-### 本地构建 WASM（同时提供 wasm-pack 方式）
-
-- 安装目标与 wasm-bindgen-cli：
-
-```
-rustup target add wasm32-unknown-unknown
-cargo build --release --target wasm32-unknown-unknown
-wasm-bindgen --target web --no-typescript \
-  --out-dir examples/wasm/pkg \
-  --out-name uuid45 \
-  target/wasm32-unknown-unknown/release/uuid45.wasm
-
-# 或使用 wasm-pack
-# cargo install wasm-pack
-# wasm-pack build --target web --out-dir examples/wasm/pkg --out-name uuid45
-```
-
-- 使用静态服务器打开 `examples/wasm/index.html`（例如 `python3 -m http.server`）。
+- `qr-url-uuid4 gen`
+- `qr-url-uuid4 encode 550e8400-e29b-41d4-a716-446655440000`
+- `qr-url-uuid4 decode <base44-string>`
 
 ## GitHub Pages 示例
 
 项目会自动发布一个在线示例到 GitHub Pages：
-- https://kookyleo.github.io/uuid4-base45/
-
-## 下载产物
-
-- 来自 CI（最新构建）：进入 Actions 页面，选择最近一次成功的 CI 任务，下载名为 "wasm-demo" 的 artifact。链接：https://github.com/kookyleo/uuid4-base45/actions
-- 来自 Release：对于打了标签（v*）的版本，可在 Releases 页面下载附带的 wasm-demo.tar.gz。链接：https://github.com/kookyleo/uuid4-base45/releases
-
-### 本地使用 wasm-demo 产物
-- 解压 wasm-demo.tar.gz
-- 使用静态服务器提供该目录，例如：
-  - python3 -m http.server 8080（浏览器访问 http://localhost:8080）
-
-## 测试
-
-`cargo test` 覆盖：
-- 随机 UUID 回环测试
-- 固定 UUID 回环测试
-- 填充位校验
+- https://kookyleo.github.io/qr-url-uuid4/
 
 ## 为什么是 122 位？
 
-UUID v4 固定 4 位版本号与 2 位变体位，分别为 0100 与 10。移除它们后剩余 128-6=122 位熵。我们将其打包为 16 字节，其中最后一个字节只有低 2 位有效，高 6 位为 0 填充，然后使用 Base45 编码。
+UUID v4 固定 4 位版本号与 2 位变体位，分别为 0100 与 10。移除它们后剩余 128-6=122 位熵。我们将其打包为 16 字节，其中最后一个字节只有低 2 位有效，高 6 位为 0 填充，然后使用 Base44 编码。
 
 ## 许可证
 

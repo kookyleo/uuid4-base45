@@ -1,9 +1,11 @@
+use qr_url_uuid4::{
+    decode_to_bytes, decode_to_string, encode_uuid, encode_uuid_bytes, generate_v4,
+};
 use std::io::{self, Read};
 use uuid::Uuid;
-use uuid45::{decode_to_bytes, decode_to_string, encode_uuid, encode_uuid_bytes, generate_v4};
 
 fn print_usage() {
-    eprintln!("uuid45 CLI\n\nCommands:\n  gen                       Generate a random UUID v4 and print Base45 and UUID\n  encode <UUID|HEX|@->     Encode a UUID into Base45. Accepts:\n                           - canonical UUID string (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)\n                           - 32-hex (no dashes)\n                           - raw 16-byte hex prefixed with 0x? use stdin with @- to read 16 bytes\n  decode <BASE45|@->       Decode Base45 string back to UUID string and bytes (hex)\n\nOptions:\n  -q, --quiet              Only print the primary output\n  -h, --help               Show this help\n\nExamples:\n  uuid45 gen\n  uuid45 encode 550e8400-e29b-41d4-a716-446655440000\n  uuid45 decode XYZ...\n");
+    eprintln!("qr-url-uuid4 CLI\n\nCommands:\n  gen                       Generate a random UUID v4 and print Base44 and UUID\n  encode <UUID|HEX|@->     Encode a UUID into Base44. Accepts:\n                           - canonical UUID string (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)\n                           - 32-hex (no dashes)\n                           - raw 16-byte hex prefixed with 0x? use stdin with @- to read 16 bytes\n  decode <BASE44|@->       Decode Base44 string back to UUID string and bytes (hex)\n\nOptions:\n  -q, --quiet              Only print the primary output\n  -h, --help               Show this help\n\nExamples:\n  qr-url-uuid4 gen\n  qr-url-uuid4 encode 550e8400-e29b-41d4-a716-446655440000\n  qr-url-uuid4 decode XYZ...\n");
 }
 
 fn parse_uuid_input(arg: &str) -> io::Result<[u8; 16]> {
@@ -71,7 +73,7 @@ fn main() {
                 println!("{b45}");
                 return;
             }
-            println!("Base45: {b45}");
+            println!("Base44: {b45}");
             println!("UUID:   {}", u.hyphenated());
             println!("Bytes:  {}", hex::encode(u.into_bytes()));
         }
@@ -86,7 +88,7 @@ fn main() {
                     if quiet {
                         println!("{s}");
                     } else {
-                        println!("Base45: {s}");
+                        println!("Base44: {s}");
                     }
                 }
                 Err(e) => {
@@ -97,7 +99,7 @@ fn main() {
         }
         Some("decode") => {
             if args.len() < 3 {
-                eprintln!("decode requires a Base45 string or @-");
+                eprintln!("decode requires a Base44 string or @-");
                 std::process::exit(2);
             }
             let input = if args[2].as_str() == "@-" {

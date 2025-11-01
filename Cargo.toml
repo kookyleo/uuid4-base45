@@ -1,14 +1,14 @@
 [package]
-name = "uuid45"
+name = "qr-url-uuid4"
 version = "0.2.0"
 edition = "2021"
 authors = ["Rovo Dev <dev@example.com>"]
-description = "UUID v4 <-> compact 122-bit with fixed bits removed, Base45 encoding; CLI + lib + WASM"
+description = "Encode UUID v4 into compact QR-friendly URLs using Base44 (removes 6 fixed bits, alphanumeric mode optimized, no space character)"
 license = "Apache-2.0"
-repository = ""
+repository = "https://github.com/kookyleo/qr-url-uuid4"
 
 [lib]
-name = "uuid45"
+name = "qr_url_uuid4"
 crate-type = ["rlib", "cdylib"]
 
 [features]
@@ -18,7 +18,7 @@ default = []
 uuid = { version = "1", features = ["v4", "serde", "fast-rng"] }
 thiserror = "1"
 hex = "0.4"
-qr-base45 = "0.1.1"
+qr-base44 = "0.1"
 
 # WASM
 wasm-bindgen = { version = "0.2" }
@@ -32,6 +32,6 @@ uuid = { version = "1", features = ["js"] }
 js-sys = "0.3"
 
 [[bin]]
-name = "uuid45"
-path = "src/bin/uuid45.rs"
+name = "qr-url-uuid4"
+path = "src/bin/qr-url-uuid4.rs"
 
