@@ -87,7 +87,7 @@
   <div class="section" id="qr-section" style="display:none;">
     <h2>QR Code</h2>
     <div class="row">
-      <label>URL: <input type="text" id="qr-url" style="width:450px; max-width:100%"></label>
+      <label>URL: <input type="text" id="qr-url" style="width:360px; max-width:100%"></label>
       <button id="btn-copy-url" style="display:none;">Copy</button>
       <button id="btn-qr-confirm">Generate</button>
     </div>
@@ -268,6 +268,7 @@
         return;
       }
 
+      let firstBtn = null;
       for (const {ec, ver, totalBits} of opts) {
         const btn = document.createElement('button');
         btn.textContent = `v${ver} ${ec} (${totalBits} bits)`;
@@ -281,8 +282,14 @@
           view.innerHTML = svg;
         });
         container.appendChild(btn);
+        if (!firstBtn) firstBtn = btn;
       }
       container.style.display = 'block';
+
+      // Auto-generate first option
+      if (firstBtn) {
+        firstBtn.click();
+      }
     });
 
     main();
