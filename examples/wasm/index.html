@@ -53,6 +53,11 @@
     button:active {
       background: #e0e0e0;
     }
+    .info-text {
+      color: #666;
+      font-size: 0.9rem;
+      margin-top: 0.3rem;
+    }
   </style>
 </head>
 <body>
@@ -82,10 +87,12 @@
   <div class="section" id="qr-section" style="display:none;">
     <h2>QR Code</h2>
     <div class="row">
-      <label>URL prefix: <input type="text" id="qr-prefix" value="https://lets.go/" style="width:480px; max-width:100%"></label>
-      <button id="btn-qr-confirm">Confirm</button>
+      <label>URL: <input type="text" id="qr-url" style="width:600px; max-width:100%"></label>
+      <button id="btn-qr-confirm">Generate</button>
     </div>
-    <div class="row" id="qr-info" style="display:none;"></div>
+    <div class="row" id="qr-info" style="display:none;">
+      <div class="info-text" id="qr-stats"></div>
+    </div>
     <div class="row" id="qr-options" style="display:none;"></div>
     <div class="row" id="qr-view"></div>
   </div>
@@ -132,27 +139,19 @@
       return window.qrcode;
     }
 
-    // Utility: estimate alphanumeric length -> QR alphanumeric capacity planning
+    // Utility: validate Base45/QR alphanumeric characters
     function isBase45Char(ch) {
       const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
       return alphabet.indexOf(ch) >= 0;
     }
 
-    function normalizeBase45PrefixInput(s) {
+    function normalizeBase45Input(s) {
       // Uppercase and validate all chars are in Base45 alphabet (same as QR alphanumeric)
       const t = s.toUpperCase();
       for (const ch of t) {
         if (!isBase45Char(ch)) return { ok: false, val: t };
       }
       return { ok: true, val: t };
-    }
-
-    function alnumModeBits(str) {
-      // QR alphanumeric mode encodes 2 chars -> 11 bits, last single char -> 6 bits
-      const n = str.length;
-      const pairs = Math.floor(n / 2);
-      const single = n % 2;
-      return pairs * 11 + single * 6;
     }
 
     import { minimalVersionForAlnum, calculateAlnumBits } from './qr_capacity.js?v=4';
@@ -164,6 +163,7 @@
       const uuidOut = document.getElementById('uuid-out');
       const uuidIn = document.getElementById('uuid-in');
       const b45In = document.getElementById('b45-in');
+      const qrUrl = document.getElementById('qr-url');
       const btnCopyUuid = document.getElementById('btn-copy-uuid');
       const btnCopyB45 = document.getElementById('btn-copy-b45');
       const btnCopyDecoded = document.getElementById('btn-copy-decoded');
@@ -186,6 +186,9 @@
           b45In.value = s;  // Auto-fill decode input
           btnCopyB45.style.display = 'inline-block';
           document.getElementById('btn-qr').style.display = 'inline-block';
+
+          // Update QR URL with Base45
+          qrUrl.value = 'https://lets.go/' + s;
         } catch (e) {
           alert('Encode error: ' + e);
         }
@@ -217,24 +220,39 @@
     });
 
     document.getElementById('btn-qr-confirm').addEventListener('click', async () => {
-      const prefixRaw = document.getElementById('qr-prefix').value || '';
-      const norm = normalizeBase45PrefixInput(prefixRaw);
-      if (!norm.ok) { alert('Prefix contains characters outside Base45 alphabet. It has been uppercased: ' + norm.val); return; }
-      const prefix = norm.val;
-      const b45 = document.getElementById('b45').textContent.trim().toUpperCase();
-      // Validate base45 payload characters
-      for (const ch of b45) { if (!isBase45Char(ch)) { alert('Base45 content contains invalid characters.'); return; } }
-      const payload = prefix + b45;
-      const alnumBits = alnumModeBits(payload);
-      const info = document.getElementById('qr-info');
-      info.textContent = `Alphanumeric bits: ${alnumBits}`;
-      info.style.display = 'block';
+      const urlRaw = document.getElementById('qr-url').value || '';
+      const norm = normalizeBase45Input(urlRaw);
+      if (!norm.ok) {
+        alert('URL contains characters outside Base45/QR alphanumeric alphabet. It has been uppercased: ' + norm.val);
+        return;
+      }
+      const payload = norm.val;
+
+      // Calculate bits breakdown
+      const payloadLen = payload.length;
+      const pairs = Math.floor(payloadLen / 2);
+      const single = payloadLen % 2;
+      const dataBits = pairs * 11 + single * 6;
+
+      // Display detailed stats
+      const statsDiv = document.getElementById('qr-stats');
+      statsDiv.innerHTML = `
+        <strong>Payload:</strong> ${payloadLen} chars<br>
+        <strong>Data bits:</strong> ${dataBits} bits (${pairs} pairs × 11 + ${single} single × 6)<br>
+        <strong>Total QR bits:</strong> mode(4) + count(9-13) + data(${dataBits}) + terminator(0-4) + padding
+      `;
+      document.getElementById('qr-info').style.display = 'block';
+
       const ecLevels = ['L','M','Q','H'];
       const opts = [];
       for (const ec of ecLevels) {
-        const ver = minimalVersionForAlnum(payload.length, ec);
-        if (ver) opts.push({ ec, ver });
+        const ver = minimalVersionForAlnum(payloadLen, ec);
+        if (ver) {
+          const totalBits = calculateAlnumBits(payloadLen, ver);
+          opts.push({ ec, ver, totalBits });
+        }
       }
+
       const container = document.getElementById('qr-options');
       container.innerHTML = '';
       if (opts.length === 0) {
@@ -242,16 +260,14 @@
         container.style.display = 'block';
         return;
       }
-      for (const {ec, ver} of opts) {
+
+      for (const {ec, ver, totalBits} of opts) {
         const btn = document.createElement('button');
-        btn.textContent = `v${ver} ${ec}`;
+        btn.textContent = `v${ver} ${ec} (${totalBits} bits)`;
         btn.addEventListener('click', async () => {
           await loadQRLIB();
-          // Using classic qrcode-generator global API
-          const typeNumber = ver; // 1..40
-          // qrcode-generator expects EC level as string: 'L', 'M', 'Q', or 'H'
-          const qr = window.qrcode(typeNumber, ec);
-          qr.addData(payload, 'Alphanumeric');  // Must specify mode, default is 'Byte'
+          const qr = window.qrcode(ver, ec);
+          qr.addData(payload, 'Alphanumeric');
           qr.make();
           const svg = qr.createSvgTag(6, 0);
           const view = document.getElementById('qr-view');
