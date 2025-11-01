@@ -12,7 +12,7 @@
       margin: 0 auto;
     }
     input[type=text] {
-      width: 480px;
+      width: 360px;
       max-width: 100%;
       padding: 4px 8px;
       border: 1px solid #ccc;
@@ -87,7 +87,7 @@
   <div class="section" id="qr-section" style="display:none;">
     <h2>QR Code</h2>
     <div class="row">
-      <label>URL: <input type="text" id="qr-url" style="width:600px; max-width:100%"></label>
+      <label>URL: <input type="text" id="qr-url" style="width:450px; max-width:100%"></label>
       <button id="btn-copy-url" style="display:none;">Copy</button>
       <button id="btn-qr-confirm">Generate</button>
     </div>
@@ -118,7 +118,7 @@
     function copyToClipboard(text, button) {
       navigator.clipboard.writeText(text).then(() => {
         const originalText = button.textContent;
-        button.textContent = 'Copied!';
+        button.textContent = 'Copied';
         setTimeout(() => {
           button.textContent = originalText;
         }, 1500);
