@@ -189,8 +189,8 @@
           btnCopyB45.style.display = 'inline-block';
           document.getElementById('btn-qr').style.display = 'inline-block';
 
-          // Update QR URL with Base45
-          qrUrl.value = 'https://lets.go/' + s;
+          // Update QR URL with Base45 (URL-encode to handle spaces and special chars)
+          qrUrl.value = 'https://lets.go/' + encodeURIComponent(s);
           btnCopyUrl.style.display = 'inline-block';
         } catch (e) {
           alert('Encode error: ' + e);
