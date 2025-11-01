@@ -88,6 +88,7 @@
     <h2>QR Code</h2>
     <div class="row">
       <label>URL: <input type="text" id="qr-url" style="width:600px; max-width:100%"></label>
+      <button id="btn-copy-url" style="display:none;">Copy</button>
       <button id="btn-qr-confirm">Generate</button>
     </div>
     <div class="row" id="qr-info" style="display:none;">
@@ -166,6 +167,7 @@
       const qrUrl = document.getElementById('qr-url');
       const btnCopyUuid = document.getElementById('btn-copy-uuid');
       const btnCopyB45 = document.getElementById('btn-copy-b45');
+      const btnCopyUrl = document.getElementById('btn-copy-url');
       const btnCopyDecoded = document.getElementById('btn-copy-decoded');
 
       document.getElementById('btn-gen').addEventListener('click', () => {
@@ -189,6 +191,7 @@
 
           // Update QR URL with Base45
           qrUrl.value = 'https://lets.go/' + s;
+          btnCopyUrl.style.display = 'inline-block';
         } catch (e) {
           alert('Encode error: ' + e);
         }
@@ -196,6 +199,10 @@
 
       btnCopyB45.addEventListener('click', () => {
         copyToClipboard(b45Span.textContent, btnCopyB45);
+      });
+
+      btnCopyUrl.addEventListener('click', () => {
+        copyToClipboard(qrUrl.value, btnCopyUrl);
       });
 
       document.getElementById('btn-dec').addEventListener('click', async () => {
