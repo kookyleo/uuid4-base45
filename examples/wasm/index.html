@@ -207,7 +207,8 @@
 
       document.getElementById('btn-dec').addEventListener('click', async () => {
         try {
-          const s = await wasm_decode_to_uuid_str(b45In.value.trim());
+          // Do not trim - Base45 strings may start/end with space (valid alphabet char)
+          const s = await wasm_decode_to_uuid_str(b45In.value);
           uuidOut.textContent = s;
           btnCopyDecoded.style.display = 'inline-block';
         } catch (e) {
