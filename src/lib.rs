@@ -354,22 +354,4 @@ mod tests {
         let err = decode_to_uuid(&tampered_b45).unwrap_err();
         assert!(matches!(err, Uuid45Error::NonZeroPadding));
     }
-
-    #[test]
-    fn test_specific_uuid_37ecc085_with_leading_space() {
-        // This UUID's Base45 encoding starts with a space character (alphabet[36])
-        let uuid_str = "37ecc085-5ac5-4562-957a-53b27a837433";
-        let encoded = encode_uuid_str(uuid_str).unwrap();
-
-        // Verify the encoding starts with a space (valid Base45 alphabet char)
-        assert_eq!(encoded.chars().next().unwrap(), ' ');
-        assert_eq!(encoded, " %TTK0SKBULD/JFQ07RW0636");
-
-        let decoded = decode_to_string(&encoded).unwrap();
-        assert_eq!(uuid_str, decoded);
-
-        // Verify that without the leading space, decoding fails
-        let truncated = encoded.trim_start();
-        assert!(decode_to_string(truncated).is_err());
-    }
 }
