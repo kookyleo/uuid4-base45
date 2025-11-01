@@ -54,6 +54,14 @@
     button:active {
       background: #e0e0e0;
     }
+    button.selected {
+      background: #007bff;
+      color: white;
+      border-color: #0056b3;
+    }
+    button.selected:hover {
+      background: #0056b3;
+    }
     .info-text {
       color: #666;
       font-size: 0.9rem;
@@ -275,6 +283,11 @@
         const btn = document.createElement('button');
         btn.textContent = `v${ver} ${ec} (${totalBits} bits)`;
         btn.addEventListener('click', async () => {
+          // Remove selected class from all buttons
+          container.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+          // Add selected class to clicked button
+          btn.classList.add('selected');
+
           await loadQRLIB();
           const qr = window.qrcode(ver, ec);
           qr.addData(payload, 'Alphanumeric');
