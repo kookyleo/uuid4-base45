@@ -85,7 +85,7 @@
       return pairs * 11 + single * 6;
     }
 
-    import { minimalVersionForAlnum, calculateAlnumBits } from './qr_capacity.js?v=3';
+    import { minimalVersionForAlnum, calculateAlnumBits } from './qr_capacity.js?v=4';
 
     async function main() {
       await init();
@@ -163,7 +163,7 @@
           const typeNumber = ver; // 1..40
           // qrcode-generator expects EC level as string: 'L', 'M', 'Q', or 'H'
           const qr = window.qrcode(typeNumber, ec);
-          qr.addData(payload);
+          qr.addData(payload, 'Alphanumeric');  // Must specify mode, default is 'Byte'
           qr.make();
           const svg = qr.createSvgTag(6, 0);
           const view = document.getElementById('qr-view');
